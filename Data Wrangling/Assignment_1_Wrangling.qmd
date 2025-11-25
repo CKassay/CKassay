@@ -1,0 +1,150 @@
+---
+title: "Assignment 1: Data Wrangling Memo"
+author: "[Your Name Here]"
+format: 
+  pdf:
+    documentclass: article
+    fontfamily: Inter
+    fontsize: 11pt
+    margin-left: 1in
+    margin-right: 1in
+    margin-top: 1in
+    margin-bottom: 1in
+editor: visual
+---
+
+# Assignment 1: The Research "Mise en Place"
+
+## Conceptual Focus
+
+This assignment covers **Chapter 12: Data Wrangling**. As your slides note, this is the "mise en place" of research. Raw client data is messy. Our "Garbage in, garbage out" motto means we must create a clean, reliable, and reproducible workflow *before* any analysis can begin. Your R script is your "precise, shareable, and repeatable recipe" that ensures your work is transparent and accurate.
+
+---
+
+# Data Prep Memo
+
+**To:** Alex Chen (Director of Insights)
+
+**From:** [Your Name]
+
+**Subject:** Data Prep Memo for 2025 Digital Landscape Brief
+
+[Your 2-3 paragraph memo goes here. Explain *what you did* in the code and *why it was necessary*. Specifically define your new variables (`party_simple`, `platform_count`, `fb_purpose_score`) as if you were explaining them for the "Methodology" slide of the client presentation.]
+
+\newpage
+
+# Appendix: R Code and Commentary
+
+This appendix contains all R code used to import, clean, and transform the raw `ATP_W144_excerpt.csv` file into the analysis-ready `w144_wrangled.RData` file.
+
+## 1. Setup
+
+[Add your commentary for this chunk here. What package are we loading and why?]
+
+```{r}
+#| label: "chunk-setup"
+#| echo: true
+#| message: false
+#| warning: false
+
+library(tidyverse)
+```
+
+## 2. Importing
+
+[Add your commentary. What function are we using? Where did this file come from?]
+
+```{r}
+#| label: "chunk-import"
+#| echo: true
+
+# Use read_csv() to load the dataset
+w144_raw <- read_csv("ATP_W144_excerpt.csv")
+```
+
+## 3. Transforming: Binary Platform Use
+
+[Add your commentary. Why are we changing 1/2/99 to 1/0? How does `case_when()` or `if_else()` work here? Check the codebook for the variable names!]
+
+```{r}
+#| label: "chunk-transform-binary"
+#| echo: true
+
+w144_wrangled <- w144_raw %>%
+  mutate(
+    # Hint: Use if_else() or case_when(). The variable for Facebook is smuse_a_w144.
+    # The codebook shows 1=Yes, 2=No, 99=Refused. We want 1 for Yes and 0 for No/Refused.
+    uses_facebook = if_else(smuse_a_w144 == 1, 1, 0),
+    uses_instagram = NA, # Replace NA with your code
+    uses_tiktok = NA, # Replace NA with your code
+    uses_x = NA  # Replace NA with your code
+  )
+```
+
+## 4. Transforming: Composite Scale (platform_count)
+
+[Add your commentary. How does R's "trick" of adding binary variables (or TRUE/FALSE statements) work to create this scale? This is what your PowerPoint calls a "Mathematical Transformation."]
+
+```{r}
+#| label: "chunk-transform-platform-count"
+#| echo: true
+
+w144_wrangled <- w144_wrangled %>%
+  mutate(
+    # Hint: Add your four new uses_... variables together.
+    platform_count = NA # Replace NA with your code
+  )
+```
+
+## 5. Transforming: Categorical (party_simple)
+
+[Add your commentary. Why do we need to combine `f_party` and `f_partyln`? Explain the logic of your `case_when()` statement. This is a "Categorical Transformation" from your slides.]
+
+```{r}
+#| label: "chunk-transform-party"
+#| echo: true
+
+w144_wrangled <- w144_wrangled %>%
+  mutate(
+    party_simple = case_when(
+      # Logic Hint: 
+      # If f_party == 1 OR f_partyln == 1, then "Republican".
+      # If f_party == 2 OR f_partyln == 2, then "Democrat".
+      # If f_party == 3 OR f_party == 4, then "Independent/Other".
+      ... ~ "Republican",
+      ... ~ "Democrat",
+      ... ~ "Independent/Other",
+      TRUE ~ NA_character_ # This line ensures any un-matched cases become NA
+    )
+  )
+```
+
+## 6. Transforming: Index Score (fb_purpose_score)
+
+[Add your commentary. How are we creating this index? What does `== 1` do, and why can we add the results? This is a "Composite Index Score" from your slides.]
+
+```{r}
+#| label: "chunk-transform-fb-score"
+#| echo: true
+
+w144_wrangled <- w144_wrangled %>%
+  mutate(
+    # Hint: As your slides noted, R treats TRUE as 1 and FALSE as 0.
+    # So, (fbwhy_a_w144 == 1) will be 1 if true and 0 if false.
+    # Add all 7 (fbwhy_... == 1) statements together.
+    # Check the codebook for the 7 `fbwhy_` variables!
+    fb_purpose_score = NA # Replace NA with your code
+  )
+```
+
+## 7. Exporting
+
+[Add your commentary. Why are we saving this as an `.RData` file instead of a `.csv`?]
+
+```{r}
+#| label: "chunk-export"
+#| echo: true
+
+# Save the final wrangled data
+save(w144_wrangled, file = "w144_wrangled.RData")
+```
