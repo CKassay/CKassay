@@ -1,0 +1,262 @@
+---
+title: "Assignment 2: Initial Findings Memo"
+author: "[ChristianKassay]"
+format: 
+  pdf:
+    documentclass: article
+    fontfamily: Inter
+    fontsize: 11pt
+    margin-left: 1in
+    margin-right: 1in
+    margin-top: 1in
+    margin-bottom: 1in
+editor: visual
+---
+
+# Assignment 2: "The First Look"
+
+## Conceptual Focus
+
+This assignment covers **Chapter 13: Descriptive Statistics and Visualization**. Last week, we finished our "mise en place." Now, we need to find the "story" in the data. This is where we find the "wow" insights for the client. As your slides note, we will use two toolkits: \* **Descriptive Statistics:** Summarizing data with precision (e.g., `summary()`, `count()`). \* **Data Visualization:** Summarizing data with intuitive pictures (e.g., `ggplot2`).
+
+------------------------------------------------------------------------
+
+# Initial Insights Memo
+
+**To:** Alex Chen (Director of Insights)
+
+**From:** \[Christian Kassay\]
+
+**Subject:** Initial Insights for 2025 Digital Landscape Brief
+
+## Section 1: Sample Snapshot
+
+\[The sample is predominantly composed of individuals who identify as either Democrat or Republican, with very few respondents in the Independent/Other or NA categories. Racially and ethnically, the majority of respondents fall into one dominant category , while smaller proportions represent other groups,.
+
+```{r}
+#| echo: false
+#| ref.label: "chunk-desc-cat"
+summary(w144_wrangled$platform_count) 
+
+summary(w144_wrangled$fb_purpose_score) 
+```
+
+## Section 2: Potential Client-Facing Insights
+
+\[Most users stick to just a few platforms: the distribution is right-skewed, not normal. The peak occurs at one platform, and usage steadily declines as the number of platforms increases, with a long tail of heavy users. This suggests the “average” social media user engages with a limited set of platforms, while a smaller group adopts many.\]
+
+```{r}
+#| echo: false
+#| ref.label: "chunk-viz-hist"
+ggplot(w144_wrangled, aes(x = platform_count)) +
+  geom_histogram(binwidth = 1, fill = "steelblue", color = "white") +
+  labs(title = "Distribution of Platform Count",
+       x = "Number of Platforms Used",
+       y = "Count")
+```
+
+\[This bar chart shows that the sample is heavily composed of Democrats and Republicans, with very few respondents identifying as Independent/Other or NA. For a client planning outreach or messaging, this means the data primarily reflects the views and behaviors of individuals aligned with the two major parties. Tailoring strategies to these dominant groups will likely yield the most relevant insights.\]
+
+```{r}
+#| echo: false
+#| ref.label: "chunk-viz-bar"
+ggplot(w144_wrangled, aes(x = party_simple)) +
+  geom_bar(fill = "steelblue") +
+  labs(
+    title = "Distribution of Political Affiliation",
+    x = "Party",
+    y = "Count"
+  )
+```
+
+\[The boxplot shows that platform use habits are broadly similar across political affiliations, with all groups having a median around five platforms. However, Democrats display a wider range and more extreme outliers, suggesting greater variability and a subset of heavy users. This indicates that while typical usage is consistent, some political groups may include individuals with notably higher digital engagement.\]
+
+```{r}
+#| echo: false
+#| ref.label: "chunk-viz-boxplot"
+ggplot(w144_wrangled, aes(x = party_simple, y = platform_count)) +
+  geom_boxplot() +
+  labs(
+    title = "Platform Use by Political Party",
+    x = "Party",
+    y = "Number of Platforms"
+  )
+```
+
+\[The stacked bar chart shows that TikTok use varies across racial and ethnic groups, with some groups reporting higher proportions of users than others. This suggests that TikTok’s user base is not evenly distributed, but instead concentrated more heavily in certain communities. For a non‑profit client, this is important because it highlights where outreach on TikTok may be most effective and which audiences are more likely to be reached through the platform.\]
+
+```{r}
+#| echo: false
+#| ref.label: "chunk-viz-stackedbar"
+w144_wrangled %>%
+  filter(!is.na(f_racethnmod) & !is.na(uses_tiktok)) %>%
+  ggplot(aes(x = f_racethnmod, fill = as.factor(uses_tiktok))) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Proportion of TikTok Use by Race/Ethnicity",
+    x = "Race/Ethnicity",
+    y = "Proportion",
+    fill = "Uses TikTok"
+  )
+```
+
+\[The faceted histogram shows that most respondents across all political groups use Facebook for a limited number of purposes, with scores clustered between 0 and 2. Democrats and Independents show a steeper drop-off in higher scores, while Republicans display a slightly more even spread, suggesting modest differences in how broadly each group engages with Facebook. Overall, Facebook use appears relatively narrow across the board, but Republicans may use it for a slightly wider range of purposes.\]
+
+```{r}
+#| echo: false
+#| ref.label: "chunk-viz-facet"
+ggplot(
+  w144_wrangled %>% filter(!is.na(fb_purpose_score) & !is.na(party_simple)),
+  aes(x = fb_purpose_score)
+) +
+  geom_histogram(binwidth = 1) +
+  facet_wrap(~ party_simple) +
+  labs(
+    title = "Facebook 'Purpose' Score by Party",
+    x = "FB Purpose Score",
+    y = "Count"
+  )
+```
+
+\newpage
+
+# Appendix: R Code and Commentary
+
+## 1. Setup
+
+\[ We're loading tidyverse for data handling and the wrangled data set from Assignment 1 so that the analysis starts from a clean, reproducible state.\]
+
+```{r}
+#| label: "chunk-setup"
+#| echo: true
+#| message: false
+#| warning: false
+
+library(tidyverse)
+load("w144_wrangled.RData") # Load data from Assignment 1
+```
+
+## 2. Descriptive Statistics (Categorical)
+
+\[Count() tallies how many cases fall into each category, and mutate converts those counts into proportions of the total sample. These tables show the distribution of respondents by party identification and race/ethnicity, giving us a snapshot of how our sample is composed and whether certain groups are more represented than others.\]
+
+```{r}
+#| label: "chunk-desc-cat"
+#| echo: true
+
+# Get frequencies for party_simple
+# Hint: Use count() on the 'party_simple' variable, then use mutate() to calculate the percent.
+w144_wrangled %>%
+  count(party_simple) %>%
+  mutate(percent = n / sum(n))
+
+# Get frequencies for f_racethnmod
+# Hint: Use count() on the 'f_racethnmod' variable, then use mutate() to calculate the percent.
+w144_wrangled %>%
+  count(f_racethnmod) %>%
+  mutate(percent = n / sum(n))
+```
+
+## 3. Descriptive Statistics (Numeric)
+
+\[`summary()` gives us the key descriptive statistics for a numeric variable: the minimum, 1st quartile (25th percentile), median (50th percentile), mean (average), 3rd quartile (75th percentile), and maximum, plus the number of missing values if any.The mean is the arithmetic average of all values, while the median is the middle value when the data are ordered. We care about the difference because the mean is sensitive to extreme values (outliers), whereas the median better represents the “typical” case when the distribution is skewed.\]
+
+```{r}
+#| label: "chunk-desc-num"
+#| echo: true
+
+
+summary(w144_wrangled$platform_count) 
+
+summary(w144_wrangled$fb_purpose_score) 
+```
+
+## 4. Visualization (Single Numeric)
+
+\[ Aes maps variables to plot axes, while geom-histogram draws the bars, and the result is a histogram showing the frequency distribution of platform use.S\]
+
+```{r}
+#| label: "chunk-viz-hist"
+#| echo: true
+
+ggplot(w144_wrangled, aes(x = platform_count)) +
+  geom_histogram(binwidth = 1, fill = "steelblue", color = "white") +
+  labs(title = "Distribution of Platform Count",
+       x = "Number of Platforms Used",
+       y = "Count")
+```
+
+## 5. Visualization (Single Categorical)
+
+\[This bar chart shows the distribution of political affiliation among respondents, with Democrats and Republicans making up the largest portions of the sample. Independent/Other and NA categories are much smaller, indicating that most participants identify with one of the two major parties.\]
+
+```{r}
+#| label: "chunk-viz-bar"
+#| echo: true
+
+ggplot(w144_wrangled, aes(x = party_simple)) +
+  geom_bar(fill = "steelblue") +
+  labs(
+    title = "Distribution of Political Affiliation",
+    x = "Party",
+    y = "Count"
+  )
+```
+
+## 6. Visualization (Numeric by Categorical)
+
+\[The boxplot shows how the number of platforms used varies across political parties, with each box highlighting the median and spread of responses within a group. It tells us whether certain parties tend to engage with more platforms than others and reveals any outliers who use far more or fewer platforms than typical.\]
+
+```{r}
+#| label: "chunk-viz-boxplot"
+#| echo: true
+
+ggplot(w144_wrangled, aes(x = party_simple, y = platform_count)) +
+  geom_boxplot() +
+  labs(
+    title = "Platform Use by Political Party",
+    x = "Party",
+    y = "Number of Platforms"
+  )
+```
+
+## 7. Visualization (Categorical by Categorical)
+
+\[The geom_bar(position = "fill") stacks the bars and rescales them so each bar has the same height, meaning the y-axis shows proportions instead of raw counts.\]
+
+```{r}
+#| label: "chunk-viz-stackedbar"
+#| echo: true
+
+w144_wrangled %>%
+  filter(!is.na(f_racethnmod) & !is.na(uses_tiktok)) %>%
+  ggplot(aes(x = f_racethnmod, fill = as.factor(uses_tiktok))) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Proportion of TikTok Use by Race/Ethnicity",
+    x = "Race/Ethnicity",
+    y = "Proportion",
+    fill = "Uses TikTok"
+  )
+```
+
+## 8. Visualization (Small Multiples)
+
+\[ facet_wrap() takes a grouping variable and creates a separate panel for each group. Instead of overlaying all the data in one histogram, it splits the plot into small multiples, so you can see the distribution of fb_purpose_score within each party side by side.\]
+
+```{r}
+#| label: "chunk-viz-facet"
+#| echo: true
+
+ggplot(
+  w144_wrangled %>% filter(!is.na(fb_purpose_score) & !is.na(party_simple)),
+  aes(x = fb_purpose_score)
+) +
+  geom_histogram(binwidth = 1) +
+  facet_wrap(~ party_simple) +
+  labs(
+    title = "Facebook 'Purpose' Score by Party",
+    x = "FB Purpose Score",
+    y = "Count"
+  )
+```
