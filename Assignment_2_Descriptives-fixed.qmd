@@ -1,6 +1,6 @@
 ---
 title: "Assignment 2: Initial Findings Memo"
-author: "[ChristianKassay]"
+author: "[Christian Kassay]"
 format: 
   pdf:
     documentclass: article
