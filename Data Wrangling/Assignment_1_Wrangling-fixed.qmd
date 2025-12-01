@@ -25,6 +25,7 @@ This assignment covers **Chapter 12: Data Wrangling**. As your slides note, this
 
 **To:** Alex Chen (Director of Insights)
 
+
 **From:** \[Christian Kassay\]
 
 **Subject:** Data Prep Memo for 2025 Digital Landscape Brief
