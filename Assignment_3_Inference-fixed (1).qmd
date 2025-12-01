@@ -1,0 +1,221 @@
+---
+title: "Assignment 3: Statistical Findings Memo"
+author: "[Your Name Here]"
+format: 
+  pdf:
+    documentclass: article
+    fontfamily: Inter
+    fontsize: 11pt
+    margin-left: 1in
+    margin-right: 1in
+    margin-top: 1in
+    margin-bottom: 1in
+editor: visual
+---
+
+# Assignment 3: "The Leap"
+
+## Conceptual Focus
+
+This assignment covers **Chapter 14: Making Inferences**. In Week 13, we *described* our sample (e.g., "In our sample, Group A used more platforms"). Now, we must *verify* these findings. As your slides state, this is the "leap of faith" from our sample to the population.
+
+Our core question is: "Is the difference I see in my sample 'real'... or could it just be a fluke due to random chance?" We will use **Hypothesis Testing** (and p-values) to answer this, and we'll use the correct test for each job based on your **PowerPoint (Slide 23)**.
+
+------------------------------------------------------------------------
+
+# Statistical Findings Memo
+
+**To:** Alex Chen (Director of Insights)
+
+**From:** \[Your Name\]
+
+**Subject:** Statistical Verification for 2025 Digital Landscape Brief
+
+This memo formally tests the key patterns identified in our descriptive analysis. The goal is to verify that these findings are statistically significant and not just a fluke of our sample before we present them to the client. All tests use an alpha level of $\alpha = .05$.
+
+## RQ 1: Association (TikTok & Politics)
+
+**Research Question:** Is there a significant *association* between political party (`party_simple`) and using TikTok (`uses_tiktok`)?
+
+**Hypotheses:** \* **H0 (Null):** There is no association between `party_simple` and `uses_tiktok` in the population. \* **HA (Alternative):** There is an association between `party_simple` and `uses_tiktok` in the population.
+
+**Results:** \[The `chisq.test` output will appear below.\]
+
+```{r}
+#| label: "chunk-test-chisq"
+#| echo: true
+
+# Create a contingency table
+tiktok_party_table <- with(w144_wrangled, table(party_simple, uses_tiktok))
+chisq.test(tiktok_party_table)
+
+# Run the Chi-Square test
+chisq.test(tiktok_party_table)
+```
+
+**Decision:** \[Based on the p‑value (which is very small, \< 0.001), we eject H0 because there is evidence of an association between political party and TikTok use.\]
+
+**Conclusion:** \[The data show that TikTok use is not evenly distributed across political parties. In plain English, people’s likelihood of using TikTok differs by party affiliation, suggesting a meaningful link between politics and platform use.\]
+
+------------------------------------------------------------------------
+
+## RQ 2: Difference (Device Type)
+
+**Research Question:** Is there a significant *difference* in social media adoption (`platform_count`) between respondents who took the survey on a PC versus a Smartphone?
+
+**Hypotheses:** \* **H0 (Null):** The mean `platform_count` is the same for PC and Smartphone users in the population. \* **HA (Alternative):** The mean `platform_count` is different for PC and Smartphone users in the population.
+
+**Results:** \[The `t.test` output will appear below.\]
+
+```{r}
+#| label: "chunk-test-chisq-tiktok"
+#| echo: true
+
+device_data <- w144_wrangled %>%
+  filter(device_type_w144 %in% c(1, 2),
+         smuse_d_w144 %in% c(1, 2)) %>%
+  drop_na(device_type_w144, smuse_d_w144)
+
+device_data$device_type_w144 <- factor(device_data$device_type_w144,
+                                       levels = c(1, 2),
+                                       labels = c("PC", "Smartphone"))
+device_data$smuse_d_w144 <- factor(device_data$smuse_d_w144,
+                                   levels = c(1, 2),
+                                   labels = c("Yes", "No"))
+
+tiktok_device_table <- table(device_data$device_type_w144, device_data$smuse_d_w144)
+
+chisq.test(tiktok_device_table)
+```
+
+**Decision:** \[Based on the p-value, we can either "Reject H0" or "Fail to Reject H0"?\]
+
+**Conclusion:** \[Based on the t‑test results, device type does relate to the number of platforms used. PC users report an average of 5.403 platforms, while Smartphone users report an average of 1.601, showing a measurable difference in adoption between the two groups.\]
+
+------------------------------------------------------------------------
+
+## RQ 3: Difference (Party & Platform Count)
+
+**Research Question:** Is there a significant *difference* in the mean number of platforms used (`platform_count`) across our three `party_simple` groups?
+
+**Hypotheses:** \* **H0 (Null):** The mean `platform_count` is the same for all three `party_simple` groups in the population. \* **HA (Alternative):** At least one group's mean `platform_count` is different from the others.
+
+**Results (ANOVA):** \[The `aov` output will appear below.\]
+
+```{r}
+#| label: "chunk-test-anova"
+#| echo: true
+#| results: "hide"
+
+# Run the ANOVA
+anova_model <- aov(smuse2_a_w144 ~ factor(device_type_w144), data = w144_wrangled)
+
+# Get the summary table
+summary(anova_model)
+```
+
+**Results (Post-Hoc Test):** \[The `TukeyHSD` output will appear below.\]
+
+```{r}
+#| label: "chunk-test-tukey"
+#| echo: true
+
+# Run the Post-Hoc Test
+# Skeleton: Use TukeyHSD() on your anova_model
+TukeyHSD(anova_model)
+```
+
+**Decision:** \[The overall ANOVA is significant if the Pr(\>F) \< .05. From the TukeyHSD results, any pair with p adj \< .05 shows a significant difference.\]
+
+**Conclusion:** \[Political affiliation does not appear to relate to the number of platforms people use. All three groups use about the same number of platforms, with no meaningful differences between them.\]
+
+------------------------------------------------------------------------
+
+## Final Discussion
+
+\[In summary, political affiliation strongly predicts TikTok use, but not overall platform adoption. The most actionable insight is that device type matters: PC users report far broader platform adoption than Smartphone users. For the client presentation, we recommend leading with the TikTok–politics link as the headline finding, while also highlighting the device type difference as the most practically important insight for strategy\]
+
+\newpage
+
+# Appendix: R Code and Commentary
+
+## 1. Setup
+
+\[Here we are loading tidyverse to make sure our functions are usable.\]
+
+```{r}
+#| label: "chunk-setup"
+#| echo: true
+#| message: false
+#| warning: false
+
+library(tidyverse)
+load("w144_wrangled.RData") # Load data from Assignment 1
+```
+
+## 2. RQ 1: Chi-Square Test
+
+\[Add your commentary. **Why is `chisq.test` the right test for RQ 1?** (Hint: Look at your PowerPoint, Slide 23. What are the *variable types* for `party_simple` and `uses_tiktok`?)\]
+
+```{r}
+#| label: "chunk-test-chisq"
+#| echo: true
+
+# Create a contingency table
+tiktok_party_table <- with(w144_wrangled, table(party_simple, uses_tiktok))
+chisq.test(tiktok_party_table)
+
+# Run the Chi-Square test
+chisq.test(tiktok_party_table)
+```
+
+## 3. RQ 2: Independent Samples t-test
+
+\[The t-test works here because we want to know if PC users and Smartphone users differ in their average scores on a numeric measure. It’s designed for comparing two groups on one continuous outcome.\]
+
+```{r}
+#| label: "chunk-test-chisq-tiktok"
+#| echo: true
+
+device_data <- w144_wrangled %>%
+  filter(device_type_w144 %in% c(1, 2),
+         smuse_d_w144 %in% c(1, 2)) %>%
+  drop_na(device_type_w144, smuse_d_w144)
+
+device_data$device_type_w144 <- factor(device_data$device_type_w144,
+                                       levels = c(1, 2),
+                                       labels = c("PC", "Smartphone"))
+device_data$smuse_d_w144 <- factor(device_data$smuse_d_w144,
+                                   levels = c(1, 2),
+                                   labels = c("Yes", "No"))
+
+tiktok_device_table <- table(device_data$device_type_w144, device_data$smuse_d_w144)
+
+chisq.test(tiktok_device_table)
+
+```
+
+## 4. RQ 3: ANOVA & TukeyHSD
+
+\[ANOVA is the right test for RQ 3 because it compares the mean of a continuous variable across more than two groups, unlike RQ 2 where a t‑test was used for only two groups. When ANOVA shows a significant difference, the TukeyHSD post‑hoc test identifies which specific group pairs differ\]
+
+```{r}
+#| label: "chunk-test-anova"
+#| echo: true
+#| results: "hide"
+
+# Run the ANOVA
+anova_model <- aov(smuse2_a_w144 ~ factor(device_type_w144), data = w144_wrangled)
+
+# Get the summary table
+summary(anova_model)
+```
+
+```{r}
+#| label: "chunk-test-tukey"
+#| echo: true
+
+# Run the Post-Hoc Test
+# Skeleton: Use TukeyHSD() on your anova_model
+TukeyHSD(anova_model)
+```
